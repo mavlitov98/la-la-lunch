@@ -588,12 +588,16 @@ function setTime(v) {
   $$(".topt", timeMenu).forEach((o) => o.setAttribute("aria-selected", o.dataset.time === v));
 }
 const timeCloseMs = () => cssMs("--dropdown-close-dur", 150);
+let timeHideT = 0;
 function openTime() {
   // open upward when there is not enough room below inside the sheet
   const sheetBox = $("#sheet").getBoundingClientRect(), btn = timeBtn.getBoundingClientRect();
   const below = Math.min(innerHeight, sheetBox.bottom) - btn.bottom, above = btn.top - Math.max(0, sheetBox.top);
   timeMenu.dataset.origin = below < 300 && above > below ? "bottom-center" : "top-center";
+  clearTimeout(timeHideT);
+  timeMenu.hidden = false; // closed menu is out of layout so it doesn't stretch the sheet's scroll
   timeMenu.classList.remove("is-closing");
+  void timeMenu.offsetWidth; // start the open transition from the closed state
   timeMenu.classList.add("is-open");
   timeBtn.setAttribute("aria-expanded", "true");
   const sel = $('.topt[aria-selected="true"]', timeMenu) || $(".topt", timeMenu);
@@ -604,7 +608,7 @@ function closeTime() {
   timeMenu.classList.remove("is-open");
   timeMenu.classList.add("is-closing");
   timeBtn.setAttribute("aria-expanded", "false");
-  setTimeout(() => timeMenu.classList.remove("is-closing"), timeCloseMs());
+  timeHideT = setTimeout(() => { timeMenu.classList.remove("is-closing"); timeMenu.hidden = true; }, timeCloseMs());
 }
 timeBtn.addEventListener("click", () => (timeMenu.classList.contains("is-open") ? closeTime() : openTime()));
 timeMenu.addEventListener("click", (e) => {
