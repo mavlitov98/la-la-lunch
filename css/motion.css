@@ -470,6 +470,7 @@
 /* cards enter from the right with a blur, one after another (list view already has its own rise).
    Uses `translate`, not `transform`, so it doesn't fight the scroll-driven scale; the empty `to`
    hands opacity back to the card's own value. */
+.carousel.is-entering { scroll-snap-type: none; }
 .card.is-entering {
   animation: card-in var(--duration-very-slow) var(--ease-smooth-out) backwards;
   animation-delay: calc(var(--i, 0) * var(--duration-micro));

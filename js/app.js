@@ -144,6 +144,24 @@ function ctl(key, big = false) {
     ? `<button type="button" class="btn btn-primary btn-add" data-inc="${key}"><i data-lucide="plus"></i>В корзину</button>`
     : `<button type="button" class="add" data-inc="${key}" aria-label="Добавить ${d.n}"><i data-lucide="plus"></i></button>`;
 }
+/* КБЖУ for the chosen portion (drinks scale by volume) */
+function kbju(d, i = si(d)) {
+  if (d.s) {
+    const per = KBJU100[d.id], ml = parseInt(d.s[i][0], 10) / 100;
+    return per && per.map((v) => Math.round(v * ml));
+  }
+  return KBJU[d.id];
+}
+const KBJU_LABELS = ["ккал", "белки, г", "жиры, г", "углев., г"];
+function kbjuBlock(d) {
+  const v = kbju(d);
+  if (!v) return "";
+  return `<div class="kbju" data-kbju="${d.id}">${v
+    .map((n, k) => `<div><b data-k="${k}">${n}</b><span>${KBJU_LABELS[k]}</span></div>`)
+    .join("")}</div>
+    <p class="kbju-cap">${d.s ? "На " + d.s[si(d)][0] : amount(d) ? "На порцию " + amount(d) : "На порцию"}</p>`;
+}
+
 function sizes(d) {
   if (!multi(d)) return "";
   return `<div class="sizes" role="group" aria-label="Объём, мл">${d.s
@@ -242,12 +260,13 @@ $("#tabs").addEventListener("click", (e) => {
 /* ---------- dishes: carousel, list, or bar card for drinks ---------- */
 function renderDishes() {
   const el = $("#dishes");
-  el.className = view === "cards" ? "carousel" : "grid";
+  // "is-entering" pauses scroll snapping before the new cards exist (see renderCards)
+  el.className = view === "cards" ? "carousel is-entering" : "grid";
   $("#cardnav").hidden = view !== "cards";
   if (view === "list") renderList();
   else renderCards();
   icons();
-  if (view === "cards") requestAnimationFrame(updateFocus);
+  if (view === "cards") updateFocus(); // set scales before paint so nothing snaps a frame later
 }
 function renderCards() {
   const el = $("#dishes");
@@ -272,8 +291,14 @@ function renderCards() {
   const n = MENU[cur].length;
   $("#dots").innerHTML = n <= 8 ? MENU[cur].map(() => `<span class="dot"></span>`).join("") : `<span class="counter" id="counter"></span>`;
   el.scrollLeft = 0;
-  // drop the entrance class once it has played, so later re-renders of a single card don't replay it
-  setTimeout(() => $$(".card.is-entering", el).forEach((c) => c.classList.remove("is-entering")), 1200);
+  // Snapping is paused while the cards slide in: Chrome/Safari would otherwise snap to the card's
+  // animated (translated) position and leave the carousel 48px off-centre.
+  el.classList.add("is-entering");
+  clearTimeout(renderCards.t);
+  renderCards.t = setTimeout(() => {
+    $$(".card.is-entering", el).forEach((c) => c.classList.remove("is-entering"));
+    el.classList.remove("is-entering");
+  }, 1200);
 }
 function renderList() {
   $("#dishes").innerHTML = MENU[cur]
@@ -296,6 +321,12 @@ function refresh(id) {
   const d = BYID[id];
   $$(`[data-ctl="${id}"]`).forEach((e) => (e.innerHTML = ctl(keyOf(d), e.hasAttribute("data-big"))));
   $$(`[data-price="${id}"]`).forEach((e) => popText(e, fmt(price(d))));
+  const v = kbju(d);
+  $$(`[data-kbju="${id}"]`).forEach((box) => {
+    $$("b[data-k]", box).forEach((b) => popText(b, String(v[+b.dataset.k])));
+    const cap = box.nextElementSibling;
+    if (cap && d.s) cap.textContent = "На " + d.s[si(d)][0];
+  });
   $$(`[data-size^="${id}|"]`).forEach((b) => b.setAttribute("aria-pressed", b.dataset.size === keyOf(d)));
   icons();
 }
@@ -378,11 +409,41 @@ scrim.addEventListener("click", () => hideSheet());
 $$("[data-close]").forEach((b) => b.addEventListener("click", () => hideSheet()));
 document.addEventListener("keydown", (e) => { if (e.key === "Escape") hideSheet(); });
 
+$$(".sheet").forEach((sheet) => {
+  let y0 = null, t0 = 0, dy = 0, dragging = false;
+  sheet.addEventListener("touchstart", (e) => {
+    if (e.touches.length !== 1 || e.target.closest(".time-menu, input, textarea")) { y0 = null; return; }
+    y0 = e.touches[0].clientY; t0 = e.timeStamp; dy = 0; dragging = false;
+  }, { passive: true });
+  sheet.addEventListener("touchmove", (e) => {
+    if (y0 === null) return;
+    const d = e.touches[0].clientY - y0;
+    if (!dragging) {
+      if (d > 6 && sheet.scrollTop <= 0) { dragging = true; sheet.style.transition = "none"; }
+      else if (Math.abs(d) > 6) { y0 = null; return; } // a normal scroll, leave it alone
+      else return;
+    }
+    e.preventDefault(); // stop iOS from rubber-banding the content instead of moving the sheet
+    dy = Math.max(0, d);
+    sheet.style.transform = `translateY(${dy}px)`;
+  }, { passive: false });
+  const end = (e) => {
+    if (!dragging) { y0 = null; return; }
+    const fast = dy / Math.max(1, e.timeStamp - t0) > 0.6; // a quick flick closes it too
+    dragging = false; y0 = null;
+    sheet.style.transition = "";
+    sheet.style.transform = "";
+    if (dy > 90 || (fast && dy > 30)) hideSheet();
+  };
+  sheet.addEventListener("touchend", end);
+  sheet.addEventListener("touchcancel", end);
+});
+
 $$("[data-drag]").forEach((head) => {
   const sheet = head.closest(".sheet");
   let y0 = null, dy = 0;
   head.addEventListener("pointerdown", (e) => {
-    if (e.target.closest("button")) return;
+    if (e.pointerType === "touch" || e.target.closest("button")) return; // touch is handled above
     y0 = e.clientY; dy = 0;
     sheet.style.transition = "none";
     head.setPointerCapture(e.pointerId);
@@ -414,6 +475,7 @@ function openDish(id) {
       ${amount(d) ? `<span class="chip chip-light"><i data-lucide="weight"></i>${amount(d)}</span>` : ""}
       ${d.d ? `<p class="d-desc">${d.d}</p>` : ""}
       ${sizes(d)}
+      ${kbjuBlock(d)}
       <div class="d-buy">
         <span class="d-price" data-price="${d.id}">${fmt(price(d))}</span>
         <span data-ctl="${d.id}" data-big>${ctl(keyOf(d), true)}</span>

@@ -83,3 +83,25 @@ const MENU = {
   ]
 };
 const ICONS = {"Бранчи":"egg-fried","Завтраки":"croissant","Боулы":"leaf","Салаты":"salad","Супы":"soup","Пасты":"wheat","Закуски":"drumstick","Десерты":"cake-slice","Детское":"baby","Кофе":"coffee"};
+
+/* КБЖУ — DEMO placeholder numbers, not lab data. Replace with the cafe's own tech cards.
+   Dishes: [kcal, protein g, fat g, carbs g] per portion. Drinks: per 100 ml, scaled to the chosen size. */
+const KBJU = {
+  branch1: [720, 32, 34, 68], branch2: [640, 34, 22, 74],
+  syrniki: [610, 28, 24, 68], omlet: [520, 30, 38, 18], scrambl: [360, 22, 26, 8], manka: [290, 9, 8, 46], oves: [310, 10, 11, 42],
+  "b-losos": [540, 26, 22, 58], "b-krevetki": [480, 24, 18, 54], "b-kinoa": [510, 32, 16, 56],
+  "b-klub": [360, 12, 12, 50], "b-banan": [400, 12, 12, 62], "b-yagody": [350, 12, 12, 48],
+  "s-cezar": [410, 24, 28, 16], "s-krevetki": [290, 16, 20, 10], "s-rostbif": [330, 22, 20, 14],
+  "s-pechen": [340, 20, 20, 20], "s-grek": [260, 7, 22, 9], "s-ovosh": [130, 3, 8, 12],
+  borsch: [210, 12, 9, 20], solyanka: [280, 16, 18, 12], grib: [250, 6, 18, 16], lapsha: [180, 12, 5, 22], okroshka: [190, 9, 10, 15],
+  pasta: [520, 22, 24, 54], funchoza: [480, 24, 12, 70],
+  naggets: [300, 16, 18, 18], fri: [430, 5, 22, 52], sous: [60, 1, 4, 6],
+  fondan: [520, 8, 30, 56], "sh-vishnya": [560, 9, 26, 72], "sh-grusha": [540, 9, 26, 68],
+  "k-sup": [140, 10, 4, 15], "k-palochki": [120, 3, 6, 14],
+};
+const KBJU100 = {
+  capp: [40, 2, 2, 3], latte: [45, 2.2, 2.3, 3.5], raf: [95, 2, 7, 7], flat: [38, 2, 2, 3], esp: [2, 0.1, 0, 0.3], amer: [1, 0.1, 0, 0.2],
+  urbech: [80, 3, 5, 6], rlatte: [60, 2, 2.2, 8], rsmor: [100, 2, 7, 10], rprya: [105, 2, 7, 11], choch: [90, 2.5, 4, 11],
+  ice: [40, 2, 2, 3.5], bor: [30, 0.2, 0, 7], bgr: [32, 0.2, 0, 8], bch: [34, 0.2, 0, 8.5], eton: [20, 0, 0, 5],
+  iurb: [70, 2.5, 4, 6], frap: [85, 2, 3.5, 12], affo: [110, 2, 6, 12],
+};

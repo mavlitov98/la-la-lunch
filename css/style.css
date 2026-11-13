@@ -262,13 +262,11 @@ body::before {
   box-shadow: 0 24px 40px -18px var(--shadow);
   transform: scale(calc(.9 + .1 * var(--t)));
   transform-origin: 50% 100%;
-  transition: transform 220ms var(--ease-smooth-out), opacity 220ms var(--ease-smooth-out);
   opacity: calc(.55 + .45 * var(--t));
 }
 .plate {
   display: block; width: 236px; max-width: 86%; aspect-ratio: 1; margin: -110px auto 4px;
   transform: rotate(calc((1 - var(--t)) * -16deg));
-  transition: transform 260ms var(--ease-smooth-out);
 }
 .food { width: 100%; height: auto; aspect-ratio: 1; object-fit: contain; }
 .plate .food { filter: drop-shadow(0 18px 18px rgba(4, 24, 20, .45)); }
@@ -518,10 +516,10 @@ form { display: grid; gap: 14px; margin-top: 4px; }
 .d-hero {
   display: grid; place-items: center;
   margin: 0 calc(-1 * var(--gr)) 0 calc(-1 * var(--gl));
-  padding: 44px 24px 22px; background: var(--hero-bg);
+  padding: 30px 24px 14px; background: var(--hero-bg);
 }
 .d-photo {
-  width: min(84vw, 380px); aspect-ratio: 1; object-fit: contain;
+  width: min(64vw, 280px); height: auto; aspect-ratio: 1; object-fit: contain;
   filter: drop-shadow(0 24px 24px rgba(10, 60, 52, .4));
   animation: d-in .7s var(--ease) both;
 }
@@ -532,6 +530,16 @@ form { display: grid; gap: 14px; margin-top: 4px; }
 .d-desc { margin: 0; color: var(--muted); font-size: 16px; }
 .d-info .sizes button { border-color: var(--line); }
 .d-info .sizes button[aria-pressed="true"] { background: var(--teal); color: var(--bg); }
+.kbju { width: 100%; display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.kbju div {
+  display: grid; justify-items: center; gap: 2px; padding: 10px 4px; border-radius: 14px;
+  background: var(--mint-soft); text-align: center;
+}
+.kbju div:first-child { background: var(--teal); color: var(--bg); }
+.kbju b { font-size: 18px; font-weight: 800; line-height: 1.2; font-variant-numeric: tabular-nums; }
+.kbju span { font-size: 11.5px; color: var(--muted); line-height: 1.2; }
+.kbju div:first-child span { color: inherit; opacity: .8; }
+.kbju-cap { margin: -4px 0 0; font-size: 12px; color: var(--muted); }
 .d-buy { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 8px; }
 .d-price { font-size: 28px; font-weight: 800; font-variant-numeric: tabular-nums; }
 .btn-add { min-height: 52px; padding: 0 24px; }
