@@ -38,7 +38,7 @@ const keyOf = (d, i = si(d)) => d.id + "|" + i;
 /* a dish photo, or a CSS-drawn cup on a saucer for drinks without photos */
 const img = (d, cls = "food", lazy = true) => {
   const ph = photoOf(d);
-  if (ph) return `<img class="${cls}" src="img/${ph}.webp" alt="${d.n}" ${lazy ? 'loading="lazy"' : ""} decoding="async" width="640" height="640">`;
+  if (ph) return `<img class="${cls}" src="img/${ph}.webp?v=2" alt="${d.n}" ${lazy ? 'loading="lazy"' : ""} decoding="async" width="640" height="640">`;
   if (d.cup) return `<span class="${cls} cup" role="img" aria-label="${d.n}" style="--c1:${d.cup[0]};--c2:${d.cup[1]}"><span class="mug"></span></span>`;
   return `<span class="${cls} cup dishph" role="img" aria-label="${d.n}"><i data-lucide="${ICONS[d.cat]}"></i></span>`;
 };
