@@ -431,7 +431,7 @@
 
 /* "added to cart" toast, floating above the dock */
 .toast-wrap {
-  position: fixed; left: 0; right: 0; bottom: calc(86px + var(--sab)); z-index: 50;
+  position: fixed; left: 0; right: 0; bottom: calc(98px + var(--sab)); z-index: 50;
   display: flex; justify-content: center; pointer-events: none;
   padding-left: var(--gl); padding-right: var(--gr);
 }
@@ -446,7 +446,7 @@
 @media (min-width: 860px) { .toast-wrap { bottom: 28px; } }
 
 /* dock cart badge */
-.dock .t-badge { top: 3px; right: 9px; }
+.dock .t-badge { top: 4px; right: auto; left: 50%; margin-left: 5px; }
 .dock .t-badge-dot {
   min-width: 18px; height: 18px; padding: 0 5px; display: grid; place-items: center;
   border-radius: 999px; background: var(--purple); color: #fff;

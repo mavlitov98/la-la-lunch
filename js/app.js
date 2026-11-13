@@ -1,4 +1,4 @@
-/* Ла Ла Ланч: слайдшоу, меню, карточка блюда, корзина, заказ (демо, без отправки на сервер). Данные в js/menu.js */
+/* Ла Ла Ланч: полка блюд, меню, карточка блюда, корзина, заказ (демо, без отправки на сервер). Данные в js/menu.js */
 "use strict";
 
 const $ = (s, r = document) => r.querySelector(s);
@@ -169,80 +169,72 @@ function sizes(d) {
     .join("")}<span>мл</span></div>`;
 }
 
-/* ---------- hero slideshow ---------- */
-const SHOW = ["branch1", "pasta", "lapsha", "capp", "funchoza", "solyanka"].map((id) => BYID[id]);
-let slide = 0, timer = 0;
-$("#stage").innerHTML = SHOW.map((d, i) => img(d, "slide" + (i === 0 ? " on" : ""), i > 1)).join("");
-$("#showDots").innerHTML = SHOW.map(() => `<i></i>`).join("");
-function goSlide(n, dir = 1) {
-  const slides = $$("#stage .slide");
-  const prev = slide;
-  slide = (n + SHOW.length) % SHOW.length;
-  if (prev !== slide) {
-    const out = slides[prev], inn = slides[slide];
-    // put the incoming plate on the side it comes from, without animating that jump
-    inn.style.transition = "none";
-    inn.classList.remove("on", "out-l", "out-r");
-    inn.classList.add(dir > 0 ? "from-r" : "from-l");
-    void inn.offsetWidth;
-    inn.style.transition = "";
-    inn.classList.remove("from-r", "from-l");
-    inn.classList.add("on");
-    out.style.transform = "";
-    out.classList.remove("on");
-    out.classList.add(dir > 0 ? "out-l" : "out-r");
-  }
-  const d = SHOW[slide];
-  $("#showName").textContent = d.n;
-  $("#showPrice").textContent = fmt(price(d));
-  $$("#showDots i").forEach((e, i) => e.classList.toggle("on", i === slide));
+/* ---------- hero shelf: pick a category, swipe the plates, "+" adds straight to the cart ---------- */
+const SHELF_CATS = ["Бранчи", "Боулы", "Супы", "Пасты", "Кофе"].filter((k) => MENU[k]);
+let shelfCat = SHELF_CATS[0], shelfIdx = 0, shelfTimer = 0, shelfPaused = false;
+const shelf = $("#shelf");
+$("#heroCats").innerHTML = SHELF_CATS
+  .map((k) => `<button type="button" data-cat="${k}" aria-pressed="${k === shelfCat}">${k}</button>`).join("");
+function renderShelf(animate = false) {
+  const items = MENU[shelfCat].filter((d) => photoOf(d)).slice(0, 6);
+  shelf.innerHTML = items
+    .map((d, i) => `
+    <article class="pcard${animate ? " is-entering" : ""}" style="--i:${i}" data-open="${d.id}">
+      ${img(d, "pcard-pic", i > 1)}
+      <p class="pcard-name">${d.n}</p>
+      <div class="pcard-row">
+        <span class="pcard-price"><b data-price="${d.id}">${fmt(price(d))}</b><small>${amount(d) || ""}</small></span>
+        <span data-ctl="${d.id}">${ctl(keyOf(d))}</span>
+      </div>
+    </article>`)
+    .join("");
+  $("#shelfDots").innerHTML = items.map((_, i) => `<i class="${i ? "" : "on"}"></i>`).join("");
+  shelf.scrollLeft = 0;
+  shelfIdx = 0;
+  icons();
 }
-function autoplay(on) {
-  clearInterval(timer);
-  if (on && !reduceMotion) timer = setInterval(() => goSlide(slide + 1), 3600);
+const shelfCards = () => $$(".pcard", shelf);
+const shelfX = (c) => c.offsetLeft - (shelf.clientWidth - c.offsetWidth) / 2;
+shelf.addEventListener("scroll", () => {
+  let best = 0, dist = Infinity;
+  shelfCards().forEach((c, i) => { const d = Math.abs(shelfX(c) - shelf.scrollLeft); if (d < dist) { dist = d; best = i; } });
+  if (best === shelfIdx) return;
+  shelfIdx = best;
+  $$("#shelfDots i").forEach((e, i) => e.classList.toggle("on", i === best));
+}, { passive: true });
+// autoplay stops for good once the visitor touches the shelf
+["pointerdown", "wheel"].forEach((t) => shelf.addEventListener(t, () => (shelfPaused = true), { passive: true }));
+function shelfAutoplay(on) {
+  clearInterval(shelfTimer);
+  if (!on || reduceMotion) return;
+  shelfTimer = setInterval(() => {
+    const cards = shelfCards();
+    if (shelfPaused || !cards.length) return;
+    shelf.scrollTo({ left: shelfX(cards[(shelfIdx + 1) % cards.length]), behavior: "smooth" });
+  }, 3800);
 }
-goSlide(0);
-autoplay(true);
-document.addEventListener("visibilitychange", () => autoplay(!document.hidden));
-$("#showCap").addEventListener("click", () => openDish(SHOW[slide].id));
-(() => {
-  const st = $("#stage");
-  // a tap opens the dish only via "click": browsers (Safari included) never fire it after a scroll,
-  // whereas pointerup/pointercancel also arrive when the finger was just scrolling the page
-  let x0 = null, y0 = 0, dx = 0, moved = false, swipe = false;
-  const current = () => $$("#stage .slide")[slide];
-  st.addEventListener("pointerdown", (e) => {
-    x0 = e.clientX; y0 = e.clientY; dx = 0; moved = false; swipe = false;
-    autoplay(false);
-    current().style.transition = "none";
-  });
-  st.addEventListener("pointermove", (e) => {
-    if (x0 === null) return;
-    const mx = e.clientX - x0, my = e.clientY - y0;
-    if (Math.abs(mx) > 6 || Math.abs(my) > 6) moved = true;
-    if (!swipe) {
-      if (Math.abs(my) > 6 && Math.abs(my) >= Math.abs(mx)) return; // vertical: the page is scrolling
-      if (Math.abs(mx) <= 6) return;
-      swipe = true;
-      try { st.setPointerCapture(e.pointerId); } catch {}
-    }
-    dx = mx;
-    current().style.transform = `translateX(${dx}px) rotate(${dx * 0.25}deg)`;
-  });
-  const end = (e) => {
-    if (x0 === null) return;
-    x0 = null;
-    const c = current();
-    c.style.transition = "";
-    if (e.type === "pointerup" && swipe && Math.abs(dx) > 50) goSlide(slide + (dx < 0 ? 1 : -1), dx < 0 ? 1 : -1);
-    else c.style.transform = "";
-    if (e.type === "pointercancel") moved = true;
-    autoplay(true);
-  };
-  st.addEventListener("pointerup", end);
-  st.addEventListener("pointercancel", end);
-  st.addEventListener("click", () => { if (!moved) openDish(SHOW[slide].id); });
-})();
+$("#heroCats").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-cat]");
+  if (!b || b.dataset.cat === shelfCat) return;
+  shelfCat = b.dataset.cat;
+  $$("#heroCats button").forEach((x) => x.setAttribute("aria-pressed", x === b));
+  b.scrollIntoView({ inline: "nearest", block: "nearest", behavior: "smooth" });
+  renderShelf(true);
+});
+renderShelf();
+shelfAutoplay(true);
+document.addEventListener("visibilitychange", () => shelfAutoplay(!document.hidden));
+
+/* ---------- opening hours: daily 09:00–21:00, Stavropol runs on Moscow time ---------- */
+const OPEN_H = 9, CLOSE_H = 21;
+function showHours() {
+  const h = +new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Moscow", hour: "2-digit", hour12: false }).format(new Date()) % 24;
+  const open = h >= OPEN_H && h < CLOSE_H;
+  $("#heroHours").textContent = open ? "Открыто до 21:00" : "Откроемся в 9:00";
+  $("#liveDot").classList.toggle("closed", !open);
+}
+showHours();
+setInterval(showHours, 60000);
 
 /* ---------- tabs ---------- */
 function renderTabs() {
@@ -291,6 +283,7 @@ function renderCards() {
       ${amount(d) && !multi(d) ? `<span class="chip"><i data-lucide="weight"></i>${amount(d)}</span>` : ""}
       ${sizes(d)}
       ${d.d ? `<p class="card-desc">${d.d}</p>` : ""}
+      ${kbju(d) ? `<div class="card-kbju" data-kbju="${d.id}">${kbju(d).map((n, k) => `<div><b data-k="${k}">${n}</b><span>${KBJU_LABELS[k]}</span></div>`).join("")}</div>` : ""}
       <div class="foot"><span class="cprice" data-price="${d.id}">${fmt(price(d))}</span><span data-ctl="${d.id}">${ctl(keyOf(d))}</span></div>
     </article>`
       )
@@ -333,7 +326,7 @@ function refresh(id) {
   $$(`[data-kbju="${id}"]`).forEach((box) => {
     $$("b[data-k]", box).forEach((b) => popText(b, String(v[+b.dataset.k])));
     const cap = box.nextElementSibling;
-    if (cap && d.s) cap.textContent = "На " + d.s[si(d)][0];
+    if (cap && cap.classList.contains("kbju-cap") && d.s) cap.textContent = "На " + d.s[si(d)][0];
   });
   $$(`[data-size^="${id}|"]`).forEach((b) => b.setAttribute("aria-pressed", b.dataset.size === keyOf(d)));
   icons();
@@ -398,7 +391,7 @@ function showSheet(el) {
   el.setAttribute("aria-hidden", "false");
   scrim.classList.add("open");
   el.scrollTop = 0;
-  autoplay(false);
+  shelfAutoplay(false);
 }
 function hideSheet(unlock = true) {
   if (!openSheet) return;
@@ -409,7 +402,7 @@ function hideSheet(unlock = true) {
   if (unlock) {
     scrim.classList.remove("open");
     lockScroll(false);
-    autoplay(true);
+    shelfAutoplay(true);
   }
 }
 scrim.addEventListener("click", () => hideSheet());

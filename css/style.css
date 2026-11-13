@@ -38,7 +38,7 @@
   color-scheme: light;
 }
 /* Light only, on purpose: the mint interior and the white signboard are the brand. */
-:root { --hero-bg: #86d2c4; --board: #fbfdfc; }
+:root { --hero-bg: #8fcfbf; --board: #fbfdfc; }
 
 /* ---------- base ---------- */
 *, *::before, *::after { box-sizing: border-box; }
@@ -68,7 +68,7 @@ h2 { font-size: clamp(26px, 7vw, 40px); font-weight: 800; line-height: 1.1; }
 /* no browser blue: no tap flash, no focus ring after a tap, no text selection on repeated taps */
 * { -webkit-tap-highlight-color: transparent; }
 :focus, :focus-visible { outline: none; }
-button, a, label, .tab, .card, .dish, .dock, .show, .stepper, .sizes, .seg, .viewtoggle, .toast {
+button, a, label, .tab, .card, .dish, .dock, .shelf, .stepper, .sizes, .seg, .viewtoggle, .toast {
   -webkit-user-select: none; user-select: none;
 }
 img { -webkit-user-drag: none; -webkit-touch-callout: none; }
@@ -160,58 +160,106 @@ body::before {
 .toplinks, .top-cart { display: none; }
 
 /* ---------- hero ---------- */
-/* mint band like the cafe's menu photos, white signboard on it, plate spilling over the bottom edge */
+/* hero shelf (variant C): a mint wall filling the first screen, the sign, category chips,
+   a swipeable rail of white cards with plates poking out, address + "all menu" button above the dock */
 .hero {
-  position: relative;
+  position: relative; overflow: hidden;
+  display: flex; flex-direction: column;
+  min-height: 100vh; min-height: 100svh;
   background: var(--hero-bg);
-  border-radius: 0 0 36px 36px;
-  padding-top: calc(var(--sat) + var(--bar) + 20px);
-  padding-bottom: 22px;
+  /* 62px on a 852px-tall screen; never under the status bar */
+  padding-top: max(calc(var(--sat) + 12px), clamp(20px, 7.28vh, 62px));
+  padding-bottom: calc(100px + var(--sab)); /* the dock */
 }
-.hero { overflow: hidden; }
-.hero-in { display: grid; grid-template-columns: minmax(0, 1fr); justify-items: center; }
-.signboard {
-  width: 100%; max-width: 100%; min-width: 0;
-  display: flex; justify-content: center;
-  padding: 16px 12px 18px;
-  border-radius: 22px;
-  background: var(--board);
-  box-shadow: inset 0 -5px 0 #e2ebe8, 0 16px 34px -10px rgba(20, 70, 60, .35);
+.hero-in { flex: 1; width: 100%; min-width: 0; display: flex; flex-direction: column; align-items: center; }
+.signboard { flex: none; display: flex; justify-content: center; }
+.hero .logo { align-items: center; }
+.hero .logo-xl { font-size: 44px; }
+.hero .sign { display: block; padding: 0; line-height: 1.12; letter-spacing: 0; }
+.hero .sdot, .hero .sdot.l, .hero .sdot.r {
+  width: .1em; height: .1em; margin: 0 .2em; vertical-align: .24em;
+  box-shadow: .03em .03em 0 var(--ext2), .06em .06em 0 var(--ext3);
 }
-.signboard .logo { align-items: flex-start; }
-/* slideshow: plates roll in from the left and roll out to the right, like being passed across the counter */
-.show { width: 100%; min-width: 0; display: grid; justify-items: center; gap: 14px; margin-top: 18px; }
-.stage { position: relative; width: min(82vw, 360px); aspect-ratio: 1; touch-action: pan-y; cursor: pointer; }
-.slide {
-  position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain;
-  filter: drop-shadow(0 22px 24px rgba(10, 60, 52, .35));
-  opacity: 0; transform: scale(.82);
-  transition: transform .8s var(--ease), opacity .5s ease;
-  pointer-events: none; user-select: none; -webkit-user-drag: none;
+.hero .sub { margin: .5em 0 0; padding-left: .68em; color: var(--teal); }
+.hero-q { flex: none; margin-top: 18px; font-size: 29px; font-weight: 800; line-height: 1.05; letter-spacing: -.03em; text-align: center; text-wrap: nowrap; }
+.hero-cats {
+  flex: none; width: calc(100% + var(--gl) + var(--gr)); margin: 8px calc(-1 * var(--gr)) -6px calc(-1 * var(--gl));
+  display: flex; gap: 0; overflow-x: auto; scrollbar-width: none;
+  padding: 0 var(--gr) 0 var(--gl);
 }
-.slide.on { opacity: 1; transform: none; }
-.slide.from-r { opacity: 0; transform: translateX(70%) rotate(60deg) scale(.85); }
-.slide.from-l { opacity: 0; transform: translateX(-70%) rotate(-60deg) scale(.85); }
-.slide.out-l { opacity: 0; transform: translateX(-70%) rotate(-60deg) scale(.85); }
-.slide.out-r { opacity: 0; transform: translateX(70%) rotate(60deg) scale(.85); }
-.show-cap {
-  display: flex; align-items: center; justify-content: space-between; gap: 12px;
-  width: 100%; max-width: 360px; min-width: 0; text-align: left;
-  min-height: 48px; padding: 6px 8px 6px 18px; border: 0; border-radius: 999px; cursor: pointer;
-  background: var(--board); color: var(--fg); box-shadow: 0 10px 24px -10px rgba(20, 70, 60, .4);
-  font-size: 15px; font-weight: 600;
+.hero-cats::-webkit-scrollbar { display: none; }
+.hero-cats button {
+  flex: none; box-sizing: content-box; height: 32px; padding: 0 11px; border: 6px solid transparent; border-inline-width: 3px;
+  background-clip: padding-box; border-radius: 22px / 22px; cursor: pointer; /* 44px tall tap target, 32px visible pill */
+  background-color: rgba(255, 255, 255, .5); color: var(--fg); font-size: 12.5px; font-weight: 600; line-height: 1; white-space: nowrap;
+  transition: background-color .2s, color .2s;
 }
-.show-cap span { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.show-cap b {
-  flex: none; padding: 8px 12px; border-radius: 999px; background: var(--teal); color: var(--bg);
-  font-weight: 700; font-variant-numeric: tabular-nums;
+/* auto margins centre the chips but still let them scroll from the first one when they overflow */
+.hero-cats button:first-child { margin-left: auto; }
+.hero-cats button:last-child { margin-right: auto; }
+.hero-cats button[aria-pressed="true"] { background-color: var(--fg); color: #fff; }
+.shelf {
+  flex: 1 0 auto; width: calc(100% + var(--gl) + var(--gr)); margin: 0 calc(-1 * var(--gr)) -26px calc(-1 * var(--gl));
+  display: flex; align-items: flex-end; gap: 14px;
+  overflow-x: auto; overflow-y: hidden; scrollbar-width: none; overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  /* top room for the plates that stick out above the cards; bottom room (40px, 26 of it given back by the
+     negative margin) so the card shadow fades out fully instead of being cut off by the scroll box */
+  padding: 80px calc(50% - 112.5px) 40px;
 }
-.show-dots { display: flex; gap: 6px; }
-.show-dots i { width: 6px; height: 6px; border-radius: 9px; background: rgba(255, 255, 255, .6); transition: width .3s, background .3s; }
-.show-dots i.on { width: 22px; background: var(--board); }
+.shelf::-webkit-scrollbar { display: none; }
+.pcard {
+  flex: none; width: 225px; scroll-snap-align: center; cursor: pointer;
+  display: flex; flex-direction: column; padding: 0 16px 14px;
+  border-radius: 30px; background: var(--surface); box-shadow: 0 12px 24px rgba(21, 48, 43, .14);
+  -webkit-user-select: none; user-select: none;
+}
+.pcard-pic {
+  display: block; width: 190px; height: 190px; max-width: none; margin: -72px auto 0; object-fit: contain;
+  filter: drop-shadow(0 14px 14px rgba(21, 48, 43, .22)); pointer-events: none; -webkit-user-drag: none;
+}
+/* category switch: cards rise in one after another, the plate spins into place */
+.pcard.is-entering { animation: pcard-in .5s var(--ease) backwards; animation-delay: calc(var(--i, 0) * 70ms); }
+.pcard.is-entering .pcard-pic { animation: pplate-in .7s var(--ease) backwards; animation-delay: calc(var(--i, 0) * 70ms); }
+@keyframes pcard-in { from { opacity: 0; translate: 0 26px; } }
+@keyframes pplate-in { from { opacity: 0; transform: rotate(-50deg) scale(.8); } }
+.pcard-name { margin: 8px 0 0; min-height: 40px; font-size: 16.5px; font-weight: 700; line-height: 1.2; letter-spacing: -.01em; }
+.pcard-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 10px; }
+.pcard-price { display: block; font-variant-numeric: tabular-nums; }
+.pcard-price b { display: block; font-size: 21px; font-weight: 800; letter-spacing: -.02em; line-height: 1.275; }
+.pcard-price small { display: block; min-height: 15px; font-size: 11.5px; font-weight: 500; line-height: 1.275; font-variant-numeric: normal; color: var(--muted); }
+.pcard .add { width: 42px; height: 42px; }
+.pcard .stepper { gap: 6px; }
+.pcard .stepper button { width: 36px; height: 36px; }
+.shelf-dots { position: relative; flex: none; display: flex; justify-content: center; align-items: flex-start; gap: 6px; height: 8px; }
+.shelf-dots i { width: 6px; height: 6px; border-radius: 3px; background: rgba(21, 48, 43, .28); transition: width .25s ease, background-color .25s ease; }
+.shelf-dots i.on { width: 20px; background: var(--fg); }
+.hero-foot { position: relative; flex: none; width: 100%; max-width: 420px; padding: 14px 0 6px; }
+.hero-addr {
+  margin: 0 0 12px; display: flex; align-items: center; justify-content: center; gap: 7px;
+  font-size: 13px; font-weight: 600; line-height: 1.275; white-space: nowrap;
+}
+.hero-addr svg { width: 15px; height: 15px; flex: none; }
+.live { position: relative; flex: none; width: 8px; height: 8px; margin: 0 2px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 3px rgba(255, 255, 255, .4); }
+.live.closed { background: var(--muted); box-shadow: none; }
+.hero-addr .sep { width: 3px; height: 3px; margin: 0 2px; border-radius: 50%; background: var(--teal); }
+.btn-dark { background: var(--fg); color: #fff; box-shadow: 0 8px 18px rgba(21, 48, 43, .25); }
+.hero-foot .btn { min-height: 56px; gap: 10px; font-size: 16.5px; font-weight: 700; }
 
 /* ---------- menu ---------- */
 .menu { padding-block: 24px 40px; }
+/* phones: "Смотреть всё меню" lands on a menu that is exactly one screen tall, the card stretches to fit */
+@media (max-width: 859px) {
+  .menu {
+    display: flex; flex-direction: column;
+    min-height: calc(100vh - var(--sat)); min-height: calc(100svh - var(--sat));
+    padding-block: 20px calc(100px + var(--sab)); /* bottom: the dock */
+    scroll-margin-top: -64px; /* cancels the html scroll-padding so the section starts at the very top */
+  }
+  .menu > .wrap { flex: 1; width: 100%; min-width: 0; display: flex; flex-direction: column; }
+  .menu .carousel { flex: 1; }
+  .menu .cardnav { flex: none; }
+}
 .menu-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
 .viewtoggle { flex: none; display: flex; padding: 3px; border-radius: 999px; background: var(--mint-soft); }
 .viewtoggle button {
@@ -292,6 +340,15 @@ body::before {
 }
 .chip svg { width: 14px; height: 14px; }
 .foot { margin-top: auto; padding-top: 10px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+/* KBJU strip: only where the phone card is stretched tall enough to have spare room */
+.card-kbju { display: none; }
+@media (max-width: 859px) and (min-height: 740px) {
+  .card-kbju { margin-top: auto; display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .card-kbju div { padding: 8px 2px 7px; border-radius: 14px; background: rgba(255, 255, 255, .12); text-align: center; }
+  .card-kbju b { display: block; font-size: 16px; font-weight: 800; line-height: 1.2; font-variant-numeric: tabular-nums; }
+  .card-kbju span { display: block; font-size: 10.5px; line-height: 1.2; opacity: .75; }
+  .card-kbju + .foot { margin-top: 0; }
+}
 .cprice { font-size: 22px; font-weight: 800; line-height: 1.1; font-variant-numeric: tabular-nums; }
 
 .add {
@@ -380,35 +437,50 @@ body::before {
 .cinfo span { font-size: 14.5px; color: var(--muted); }
 .cactions { display: flex; flex-wrap: wrap; gap: 10px; }
 .map { height: 300px; border-radius: 28px; overflow: hidden; background: var(--mint-soft); }
-.map iframe { width: 100%; height: 100%; border: 0; display: block; }
+/* a drawn card, not a real map: tapping it opens Yandex Maps */
+a.map { position: relative; display: block; text-decoration: none; color: var(--fg); cursor: pointer; }
+.map-art { position: absolute; inset: 0; width: 100%; height: 100%; background: #fff; }
+.map-art .blocks rect { fill: var(--mint-soft); }
+.map-art .park { fill: #bfe6d6; }
+.map-art .trees circle { fill: #8fcfbf; }
+.map-pin {
+  position: absolute; left: 50%; top: 42%; width: 52px; height: 52px; margin: -26px 0 0 -26px;
+  display: grid; place-items: center; border-radius: 50%; background: var(--purple); color: #fff;
+  box-shadow: 0 10px 20px rgba(106, 61, 191, .35);
+}
+.map-pin::before {
+  content: ""; position: absolute; inset: 0; border-radius: 50%; background: var(--purple);
+  z-index: -1; animation: ping 2.4s ease-out infinite;
+}
+.map-pin svg { width: 26px; height: 26px; }
+.map-label {
+  position: absolute; left: 12px; right: 12px; bottom: 12px; padding: 12px 44px 12px 16px;
+  display: grid; gap: 2px; border-radius: 20px; background: var(--surface);
+  box-shadow: 0 10px 24px rgba(21, 48, 43, .14);
+}
+.map-label b { font-size: 15px; }
+.map-label span { font-size: 13px; color: var(--muted); }
+.map-label svg { position: absolute; right: 14px; top: 50%; width: 22px; height: 22px; margin-top: -11px; color: var(--teal); }
+@keyframes ping { 0% { transform: scale(1); opacity: .5; } 70%, 100% { transform: scale(2.4); opacity: 0; } }
 .footer { margin-top: 28px; font-size: 13px; color: var(--muted); }
 
 /* ---------- iOS-style dock (phones) ---------- */
 .dock {
-  position: fixed; left: 50%; bottom: calc(12px + var(--sab)); z-index: 30;
-  transform: translateX(-50%);
-  display: flex; gap: 4px; padding: 7px; border-radius: 30px;
+  position: fixed; left: var(--gl); right: var(--gr); bottom: calc(22px + var(--sab)); z-index: 30;
+  display: grid; grid-template-columns: repeat(4, 1fr); height: 66px; padding: 6px; border-radius: 33px;
   background: var(--surface);
-  border: 1px solid var(--glass-line);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .45), 0 18px 50px var(--shadow);
-}
-@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .dock {
-    background: var(--glass);
-    -webkit-backdrop-filter: blur(22px) saturate(180%);
-    backdrop-filter: blur(22px) saturate(180%);
-  }
+  box-shadow: 0 10px 28px rgba(21, 48, 43, .16), 0 0 0 1px rgba(21, 48, 43, .05);
 }
 .dock a, .dock button {
-  position: relative; width: 64px; height: 54px; border: 0; border-radius: 22px;
+  position: relative; min-width: 0; border: 0; border-radius: 27px;
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
   background: transparent; color: var(--muted); text-decoration: none; cursor: pointer;
-  font-size: 10.5px; font-weight: 600; line-height: 1; white-space: nowrap;
+  font-size: 11px; font-weight: 600; line-height: 1; white-space: nowrap;
   transition: transform .35s var(--spring), color .2s, background .2s;
 }
-.dock svg { width: 24px; height: 24px; }
-.dock .on { color: var(--teal); background: rgba(35, 94, 84, .1); }
-.dock a:active, .dock button:active { transform: scale(1.15) translateY(-4px); }
+.dock svg { width: 22px; height: 22px; }
+.dock .on { color: var(--teal); background: var(--mint-soft); font-weight: 700; }
+.dock a:active, .dock button:active { transform: scale(.94); }
 .dock .count {
   position: absolute; top: 3px; right: 9px; min-width: 18px; height: 18px; padding: 0 5px;
   display: grid; place-items: center; border-radius: 999px;
@@ -555,11 +627,10 @@ form { display: grid; gap: 14px; margin-top: 4px; }
   .toplinks a:hover { color: var(--fg); }
   .top-cart { display: inline-flex; min-height: 44px; }
   .dock { display: none; }
-  .hero { padding-top: calc(var(--bar) + 40px); padding-bottom: 40px; }
-  .hero-in { grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr); align-items: center; gap: 48px; }
-  .signboard { padding: 28px 24px 30px; }
-  .show { margin-top: 0; }
-  .stage { width: min(100%, 400px); }
+  .hero { min-height: 0; border-radius: 0 0 36px 36px; padding-top: calc(var(--bar) + 40px); padding-bottom: 40px; }
+  .hero .logo-xl { font-size: 64px; }
+  .hero-q { font-size: 36px; }
+  .shelf { flex: none; }
   .arrow { display: grid; }
   .panel { grid-template-columns: .8fr 1.2fr; align-items: center; padding: 40px 44px; }
   .steps { grid-template-columns: repeat(3, 1fr); }
@@ -580,5 +651,5 @@ form { display: grid; gap: 14px; margin-top: 4px; }
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
 @media (prefers-reduced-transparency: reduce) {
-  .dock, .scrolled .topbar { background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .scrolled .topbar { background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; }
 }
