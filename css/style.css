@@ -65,10 +65,9 @@ button, a, label { touch-action: manipulation; }
 h1, h2, h3 { margin: 0; text-wrap: balance; letter-spacing: -.02em; }
 h2 { font-size: clamp(26px, 7vw, 40px); font-weight: 800; line-height: 1.1; }
 [hidden] { display: none !important; }
-:focus-visible { outline: 2px solid var(--teal); outline-offset: 3px; }
 /* no browser blue: no tap flash, no focus ring after a tap, no text selection on repeated taps */
 * { -webkit-tap-highlight-color: transparent; }
-:focus:not(:focus-visible) { outline: none; }
+:focus, :focus-visible { outline: none; }
 button, a, label, .tab, .card, .dish, .dock, .show, .stepper, .sizes, .seg, .viewtoggle, .toast {
   -webkit-user-select: none; user-select: none;
 }
@@ -475,7 +474,6 @@ form { display: grid; gap: 14px; margin-top: 4px; }
 }
 .seg input { position: absolute; opacity: 0; pointer-events: none; }
 .seg label:has(input:checked) { background: var(--teal); color: var(--bg); }
-.seg label:has(input:focus-visible) { outline: 2px solid var(--teal); outline-offset: 2px; }
 .done { padding: 16px 0 8px; text-align: center; }
 .done svg { width: 48px; height: 48px; margin: 0 auto 10px; color: var(--teal); }
 .done p { margin: 8px 0 18px; color: var(--muted); }

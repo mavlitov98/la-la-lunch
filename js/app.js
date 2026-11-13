@@ -207,33 +207,41 @@ document.addEventListener("visibilitychange", () => autoplay(!document.hidden));
 $("#showCap").addEventListener("click", () => openDish(SHOW[slide].id));
 (() => {
   const st = $("#stage");
-  let x0 = null, dx = 0;
+  // a tap opens the dish only via "click": browsers (Safari included) never fire it after a scroll,
+  // whereas pointerup/pointercancel also arrive when the finger was just scrolling the page
+  let x0 = null, y0 = 0, dx = 0, moved = false, swipe = false;
   const current = () => $$("#stage .slide")[slide];
   st.addEventListener("pointerdown", (e) => {
-    x0 = e.clientX; dx = 0;
+    x0 = e.clientX; y0 = e.clientY; dx = 0; moved = false; swipe = false;
     autoplay(false);
     current().style.transition = "none";
-    st.setPointerCapture(e.pointerId);
   });
   st.addEventListener("pointermove", (e) => {
     if (x0 === null) return;
-    dx = e.clientX - x0;
+    const mx = e.clientX - x0, my = e.clientY - y0;
+    if (Math.abs(mx) > 6 || Math.abs(my) > 6) moved = true;
+    if (!swipe) {
+      if (Math.abs(my) > 6 && Math.abs(my) >= Math.abs(mx)) return; // vertical: the page is scrolling
+      if (Math.abs(mx) <= 6) return;
+      swipe = true;
+      try { st.setPointerCapture(e.pointerId); } catch {}
+    }
+    dx = mx;
     current().style.transform = `translateX(${dx}px) rotate(${dx * 0.25}deg)`;
   });
-  const end = () => {
+  const end = (e) => {
     if (x0 === null) return;
     x0 = null;
     const c = current();
     c.style.transition = "";
-    if (Math.abs(dx) > 50) goSlide(slide + (dx < 0 ? 1 : -1), dx < 0 ? 1 : -1);
-    else {
-      c.style.transform = "";
-      if (Math.abs(dx) < 6) openDish(SHOW[slide].id);
-    }
+    if (e.type === "pointerup" && swipe && Math.abs(dx) > 50) goSlide(slide + (dx < 0 ? 1 : -1), dx < 0 ? 1 : -1);
+    else c.style.transform = "";
+    if (e.type === "pointercancel") moved = true;
     autoplay(true);
   };
   st.addEventListener("pointerup", end);
   st.addEventListener("pointercancel", end);
+  st.addEventListener("click", () => { if (!moved) openDish(SHOW[slide].id); });
 })();
 
 /* ---------- tabs ---------- */
@@ -391,7 +399,6 @@ function showSheet(el) {
   scrim.classList.add("open");
   el.scrollTop = 0;
   autoplay(false);
-  $("[data-close]", el).focus({ preventScroll: true });
 }
 function hideSheet(unlock = true) {
   if (!openSheet) return;
@@ -407,7 +414,6 @@ function hideSheet(unlock = true) {
 }
 scrim.addEventListener("click", () => hideSheet());
 $$("[data-close]").forEach((b) => b.addEventListener("click", () => hideSheet()));
-document.addEventListener("keydown", (e) => { if (e.key === "Escape") hideSheet(); });
 
 $$(".sheet").forEach((sheet) => {
   let y0 = null, t0 = 0, dy = 0, dragging = false;
@@ -591,38 +597,21 @@ function openTime() {
   timeMenu.classList.add("is-open");
   timeBtn.setAttribute("aria-expanded", "true");
   const sel = $('.topt[aria-selected="true"]', timeMenu) || $(".topt", timeMenu);
-  sel.focus({ preventScroll: true });
   timeMenu.scrollIntoView({ block: "nearest", behavior: "smooth" });
 }
-function closeTime(focusBtn = false) {
+function closeTime() {
   if (!timeMenu.classList.contains("is-open")) return;
   timeMenu.classList.remove("is-open");
   timeMenu.classList.add("is-closing");
   timeBtn.setAttribute("aria-expanded", "false");
   setTimeout(() => timeMenu.classList.remove("is-closing"), timeCloseMs());
-  if (focusBtn) timeBtn.focus({ preventScroll: true });
 }
 timeBtn.addEventListener("click", () => (timeMenu.classList.contains("is-open") ? closeTime() : openTime()));
-timeBtn.addEventListener("keydown", (e) => {
-  if (["ArrowDown", "ArrowUp"].includes(e.key)) { e.preventDefault(); openTime(); }
-});
 timeMenu.addEventListener("click", (e) => {
   const o = e.target.closest(".topt");
   if (!o) return;
   setTime(o.dataset.time);
-  closeTime(true);
-});
-timeMenu.addEventListener("keydown", (e) => {
-  const opts = [...$$(".topt", timeMenu)], i = opts.indexOf(document.activeElement);
-  const cols = 3, move = { ArrowDown: i === 0 ? 1 : cols, ArrowUp: -cols, ArrowRight: 1, ArrowLeft: -1 }[e.key];
-  if (move) {
-    e.preventDefault();
-    opts[Math.max(0, Math.min(opts.length - 1, i + move))].focus();
-  } else if (e.key === "Escape") {
-    e.preventDefault();
-    e.stopPropagation(); // close the menu, not the whole cart
-    closeTime(true);
-  } else if (e.key === "Tab") closeTime();
+  closeTime();
 });
 document.addEventListener("click", (e) => {
   if (timeMenu.classList.contains("is-open") && !e.target.closest(".select-wrap")) closeTime();
@@ -710,6 +699,21 @@ const io = new IntersectionObserver(
 /* ---------- no zoom on iOS Safari (it ignores user-scalable=no) ---------- */
 // pinch gestures; double-tap zoom is already off via touch-action: manipulation in CSS
 ["gesturestart", "gesturechange", "gestureend"].forEach((t) => document.addEventListener(t, (e) => e.preventDefault()));
+
+/* ---------- no keyboard control, no focus on buttons ---------- */
+// nothing is reachable by Tab; a clicked button/link drops focus so Enter/Space can't re-trigger it
+const typing = (el) => el && el.matches("input:not([type=radio]):not([type=hidden]), textarea, select");
+// only the navigation keys are blocked: F12, F5, Cmd/Ctrl shortcuts etc. keep working
+const NAV_KEYS = new Set(["Tab", "Enter", " ", "Escape", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "PageUp", "PageDown", "Home", "End"]);
+document.addEventListener("keydown", (e) => {
+  if (!NAV_KEYS.has(e.key) || e.metaKey || e.ctrlKey || e.altKey) return;
+  if (typing(e.target) && e.key !== "Tab") return; // still type into the form fields
+  e.preventDefault();
+}, true);
+document.addEventListener("click", (e) => {
+  const b = e.target.closest("button, a, label, [tabindex]");
+  if (b && !typing(document.activeElement)) document.activeElement?.blur();
+}, true);
 
 /* ---------- start ---------- */
 renderTabs();
