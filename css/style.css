@@ -171,6 +171,7 @@ body::before {
   padding-top: max(calc(var(--sat) + 12px), clamp(20px, 7.28vh, 62px));
   padding-bottom: calc(100px + var(--sab)); /* the dock */
 }
+.hero { --plate: clamp(128px, 22.3vh, 190px); --plate: clamp(128px, 22.3svh, 190px); } /* 190px on a 852px screen */
 .hero-in { flex: 1; width: 100%; min-width: 0; display: flex; flex-direction: column; align-items: center; }
 .signboard { flex: none; display: flex; justify-content: center; }
 .hero .logo { align-items: center; }
@@ -205,7 +206,7 @@ body::before {
   scroll-snap-type: x mandatory;
   /* top room for the plates that stick out above the cards; bottom room (40px, 26 of it given back by the
      negative margin) so the card shadow fades out fully instead of being cut off by the scroll box */
-  padding: 80px calc(50% - 112.5px) 40px;
+  padding: calc(var(--plate) * .38 + 8px) calc(50% - 112.5px) 40px;
 }
 .shelf::-webkit-scrollbar { display: none; }
 .pcard {
@@ -215,7 +216,7 @@ body::before {
   -webkit-user-select: none; user-select: none;
 }
 .pcard-pic {
-  display: block; width: 190px; height: 190px; max-width: none; margin: -72px auto 0; object-fit: contain;
+  display: block; width: var(--plate); height: var(--plate); max-width: none; margin: calc(var(--plate) * -.38) auto 0; object-fit: contain;
   filter: drop-shadow(0 14px 14px rgba(21, 48, 43, .22)); pointer-events: none; -webkit-user-drag: none;
 }
 /* category switch: cards rise in one after another, the plate spins into place */
@@ -245,6 +246,15 @@ body::before {
 .hero-addr .sep { width: 3px; height: 3px; margin: 0 2px; border-radius: 50%; background: var(--teal); }
 .btn-dark { background: var(--fg); color: #fff; box-shadow: 0 8px 18px rgba(21, 48, 43, .25); }
 .hero-foot .btn { min-height: 56px; gap: 10px; font-size: 16.5px; font-weight: 700; }
+
+/* short phone viewports (in-app browsers, Safari with both toolbars): tighten so the button stays above the dock */
+@media (max-width: 859px) and (max-height: 730px) {
+  .hero { padding-top: max(calc(var(--sat) + 10px), 3.6vh); }
+  .hero .logo-xl { font-size: 38px; }
+  .hero-q { margin-top: 10px; font-size: 26px; }
+  .hero-addr { display: none; }
+  .hero-foot { padding-top: 10px; }
+}
 
 /* ---------- menu ---------- */
 .menu { padding-block: 24px 40px; }
@@ -501,9 +511,10 @@ a.map { position: relative; display: block; text-decoration: none; color: var(--
   padding: 0 var(--gr) calc(20px + var(--sab)) var(--gl);
   border-radius: 28px 28px 0 0; background: var(--surface);
   box-shadow: 0 -20px 60px var(--shadow);
-  transform: translateY(105%); transition: transform .45s var(--ease);
+  transform: translateY(105%); visibility: hidden;
+  transition: transform .45s var(--ease), visibility 0s .45s;
 }
-.sheet.open { transform: none; }
+.sheet.open { transform: none; visibility: visible; transition: transform .45s var(--ease), visibility 0s; }
 .sheet-head { position: sticky; top: 0; z-index: 1; padding-top: 10px; background: var(--surface); touch-action: none; cursor: grab; }
 .grab { width: 42px; height: 5px; margin: 0 auto 10px; border-radius: 9px; background: var(--line); }
 .sheet-title { display: flex; align-items: center; justify-content: space-between; padding-bottom: 10px; }
@@ -630,6 +641,7 @@ form { display: grid; gap: 14px; margin-top: 4px; }
   .hero { min-height: 0; border-radius: 0 0 36px 36px; padding-top: calc(var(--bar) + 40px); padding-bottom: 40px; }
   .hero .logo-xl { font-size: 64px; }
   .hero-q { font-size: 36px; }
+  .hero { --plate: 190px; }
   .shelf { flex: none; }
   .arrow { display: grid; }
   .panel { grid-template-columns: .8fr 1.2fr; align-items: center; padding: 40px 44px; }
