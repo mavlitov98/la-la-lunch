@@ -476,7 +476,7 @@
   animation-delay: calc(var(--i, 0) * var(--duration-micro));
 }
 @keyframes card-in {
-  from { opacity: 0; translate: 48px 0; filter: blur(var(--blur-medium)); }
+  from { opacity: 0; translate: calc(48px * var(--dir, 1)) 0; filter: blur(var(--blur-medium)); }
 }
 @media (prefers-reduced-motion: reduce) {
   .card.is-entering { animation: none !important; }
@@ -515,3 +515,28 @@
 .topt.asap svg { width: 18px; height: 18px; }
 .topt[aria-selected="true"] { background: var(--teal); color: var(--bg); }
 @media (hover: hover) { .topt:not([aria-selected="true"]):hover { background: color-mix(in srgb, var(--mint-soft) 70%, var(--mint)); } }
+
+/* ---------- pull to the neighbouring category (menu carousel, touch) ---------- */
+/* --p runs 0..1 with the finger: the tab grows out of the screen edge and its arrow stretches */
+.menu > .wrap { position: relative; }
+.pull {
+  --p: 0;
+  position: absolute; z-index: 16; top: 50%; right: 0; height: 76px; width: calc(var(--p) * 124px);
+  transform: translateY(-50%); overflow: hidden; pointer-events: none;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+  border-radius: 38px 0 0 38px; background: var(--mint-soft); color: var(--teal);
+  box-shadow: 0 8px 22px rgba(10, 30, 26, .28);
+  opacity: calc(var(--p) * 3);
+  transition: width .32s var(--ease-smooth-out), opacity .2s, background-color .18s, color .18s;
+}
+.pull.is-pulling { transition: background-color .18s, color .18s; } /* follows the finger without lag */
+.pull-prev { right: auto; left: 0; border-radius: 0 38px 38px 0; }
+.pull.armed { background: var(--fg); color: #fff; } /* darker than the dish card it sits on */
+.pull-arrow { display: flex; align-items: center; }
+.pull-prev .pull-arrow { flex-direction: row-reverse; }
+/* the shaft is what stretches */
+.pull-arrow i { width: calc(6px + var(--p) * 40px); height: 2.5px; border-radius: 2px; background: currentColor; margin-right: -9px; }
+.pull-prev .pull-arrow i { margin: 0 0 0 -9px; }
+.pull-arrow svg { flex: none; width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; transition: transform .2s var(--ease-smooth-out); }
+.pull.armed .pull-arrow svg { transform: scale(1.2); }
+.pull b { font-size: 12px; font-weight: 700; line-height: 1; white-space: nowrap; }

@@ -230,11 +230,6 @@ body::before {
   opacity: 0; transition: opacity .3s; /* shown once the photo has loaded, so it never appears as a grey blob */
   background: radial-gradient(closest-side, rgba(21, 48, 43, .34) 72%, rgba(21, 48, 43, .12) 88%, transparent 100%);
 }
-/* category switch: cards rise in one after another, the plate spins into place */
-.pcard.is-entering { animation: pcard-in .5s var(--ease) backwards; animation-delay: calc(var(--i, 0) * 70ms); }
-.pcard.is-entering .pcard-pic { animation: pplate-in .7s var(--ease) backwards; animation-delay: calc(var(--i, 0) * 70ms); }
-@keyframes pcard-in { from { opacity: 0; translate: 0 26px; } }
-@keyframes pplate-in { from { opacity: 0; transform: rotate(-50deg) scale(.8); } }
 .pcard-name { margin: 8px 0 0; min-height: 40px; font-size: 16.5px; font-weight: 700; line-height: 1.2; letter-spacing: -.01em; }
 .pcard-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 10px; }
 .pcard-price { display: block; font-variant-numeric: tabular-nums; }

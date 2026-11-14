@@ -169,17 +169,17 @@ function sizes(d) {
     .join("")}<span>мл</span></div>`;
 }
 
-/* ---------- hero shelf: pick a category, swipe the plates, "+" adds straight to the cart ---------- */
+/* ---------- hero shelf: one continuous rail of all categories; swiping past the last plate of a
+   category simply rolls into the next one, the category switch follows the plate in the centre ---------- */
 const SHELF_CATS = ["Бранчи", "Боулы", "Супы", "Пасты", "Кофе"].filter((k) => MENU[k]);
-let shelfCat = SHELF_CATS[0], shelfIdx = 0, shelfTimer = 0, shelfPaused = false;
+const SHELF = SHELF_CATS.flatMap((k) => MENU[k].filter((d) => photoOf(d)).slice(0, 6));
+let shelfCat = "", shelfIdx = -1, shelfTimer = 0, shelfPaused = false;
 const shelf = $("#shelf");
 $("#heroCats").innerHTML = `<div class="seg-in">${SHELF_CATS
-  .map((k) => `<button type="button" data-cat="${k}" aria-pressed="${k === shelfCat}">${k}</button>`).join("")}</div>`;
-function renderShelf(animate = false) {
-  const items = MENU[shelfCat].filter((d) => photoOf(d)).slice(0, 6);
-  shelf.innerHTML = items
-    .map((d, i) => `
-    <article class="pcard${animate ? " is-entering" : ""}" style="--i:${i}" data-open="${d.id}">
+  .map((k) => `<button type="button" data-cat="${k}" aria-pressed="false">${k}</button>`).join("")}</div>`;
+shelf.innerHTML = SHELF
+  .map((d, i) => `
+    <article class="pcard" data-open="${d.id}" data-cat="${d.cat}">
       ${img(d, "pcard-pic", i > 1)}
       <p class="pcard-name">${d.n}</p>
       <div class="pcard-row">
@@ -187,26 +187,38 @@ function renderShelf(animate = false) {
         <span data-ctl="${d.id}">${ctl(keyOf(d))}</span>
       </div>
     </article>`)
-    .join("");
-  // the plate's shadow disc appears only when its photo is there
-  $$(".pcard-pic", shelf).forEach((im) => {
-    const on = () => im.parentNode.classList.add("has-pic");
-    if (im.tagName !== "IMG" || im.complete) on();
-    else im.addEventListener("load", on, { once: true });
-  });
-  $("#shelfDots").innerHTML = items.map((_, i) => `<i class="${i ? "" : "on"}"></i>`).join("");
-  shelf.scrollLeft = 0;
-  shelfIdx = 0;
-  icons();
+  .join("");
+// the plate's shadow disc appears only when its photo is there
+$$(".pcard-pic", shelf).forEach((im) => {
+  const on = () => im.parentNode.classList.add("has-pic");
+  if (im.tagName !== "IMG" || im.complete) on();
+  else im.addEventListener("load", on, { once: true });
+});
+const shelfCards = [...$$(".pcard", shelf)];
+// scroll position that centres a card (offsets are measured from the shared offset parent, hence the subtraction)
+const shelfX = (c) => c.offsetLeft - shelf.offsetLeft - (shelf.clientWidth - c.offsetWidth) / 2;
+// the centred plate decides which category is lit and which dot is on (dots count plates of that category)
+function shelfMark(i) {
+  if (i === shelfIdx) return;
+  shelfIdx = i;
+  const cat = SHELF[i].cat, first = SHELF.findIndex((d) => d.cat === cat);
+  if (cat !== shelfCat) {
+    shelfCat = cat;
+    const cats = $("#heroCats");
+    $$("button", cats).forEach((b) => {
+      const on = b.dataset.cat === cat;
+      b.setAttribute("aria-pressed", on);
+      // keep the lit chip in view without scrollIntoView, which could also scroll the page
+      if (on) cats.scrollTo({ left: b.offsetLeft - (cats.clientWidth - b.offsetWidth) / 2, behavior: "smooth" });
+    });
+    $("#shelfDots").innerHTML = SHELF.filter((d) => d.cat === cat).map(() => "<i></i>").join("");
+  }
+  $$("#shelfDots i").forEach((e, k) => e.classList.toggle("on", k === i - first));
 }
-const shelfCards = () => $$(".pcard", shelf);
-const shelfX = (c) => c.offsetLeft - (shelf.clientWidth - c.offsetWidth) / 2;
 shelf.addEventListener("scroll", () => {
   let best = 0, dist = Infinity;
-  shelfCards().forEach((c, i) => { const d = Math.abs(shelfX(c) - shelf.scrollLeft); if (d < dist) { dist = d; best = i; } });
-  if (best === shelfIdx) return;
-  shelfIdx = best;
-  $$("#shelfDots i").forEach((e, i) => e.classList.toggle("on", i === best));
+  shelfCards.forEach((c, i) => { const d = Math.abs(shelfX(c) - shelf.scrollLeft); if (d < dist) { dist = d; best = i; } });
+  shelfMark(best);
 }, { passive: true });
 // autoplay stops for good once the visitor touches the shelf
 ["pointerdown", "wheel"].forEach((t) => shelf.addEventListener(t, () => (shelfPaused = true), { passive: true }));
@@ -214,20 +226,17 @@ function shelfAutoplay(on) {
   clearInterval(shelfTimer);
   if (!on || reduceMotion) return;
   shelfTimer = setInterval(() => {
-    const cards = shelfCards();
-    if (shelfPaused || !cards.length) return;
-    shelf.scrollTo({ left: shelfX(cards[(shelfIdx + 1) % cards.length]), behavior: "smooth" });
+    if (shelfPaused) return;
+    shelf.scrollTo({ left: shelfX(shelfCards[(shelfIdx + 1) % shelfCards.length]), behavior: "smooth" });
   }, 3800);
 }
 $("#heroCats").addEventListener("click", (e) => {
   const b = e.target.closest("[data-cat]");
-  if (!b || b.dataset.cat === shelfCat) return;
-  shelfCat = b.dataset.cat;
-  $$("#heroCats button").forEach((x) => x.setAttribute("aria-pressed", x === b));
-  b.scrollIntoView({ inline: "nearest", block: "nearest", behavior: "smooth" });
-  renderShelf(true);
+  if (!b) return;
+  shelfPaused = true;
+  shelf.scrollTo({ left: shelfX(shelfCards[SHELF.findIndex((d) => d.cat === b.dataset.cat)]), behavior: "smooth" });
 });
-renderShelf();
+shelfMark(0);
 shelfAutoplay(true);
 document.addEventListener("visibilitychange", () => shelfAutoplay(!document.hidden));
 
@@ -256,6 +265,8 @@ function renderTabs() {
 $("#tabs").addEventListener("click", (e) => {
   const b = e.target.closest(".tab");
   if (!b || b.dataset.k === cur) return;
+  const keys = Object.keys(MENU);
+  $("#dishes").style.setProperty("--dir", keys.indexOf(b.dataset.k) > keys.indexOf(cur) ? 1 : -1);
   cur = b.dataset.k;
   $$(".tab").forEach((t) => t.setAttribute("aria-selected", t === b));
   pillTo($("#tabs"), b, true);
@@ -357,10 +368,74 @@ function updateFocus() {
 }
 $("#dishes").addEventListener("scroll", () => { if (!raf) raf = requestAnimationFrame(updateFocus); }, { passive: true });
 addEventListener("resize", () => requestAnimationFrame(updateFocus));
+const atEdge = (c, dir) => (dir > 0 ? c.scrollLeft >= c.scrollWidth - c.clientWidth - 4 : c.scrollLeft <= 4);
+function stepCat(dir) {
+  const keys = Object.keys(MENU), k = keys[keys.indexOf(cur) + dir];
+  if (!k) return false;
+  $(`.tab[data-k="${k}"]`).click();
+  if (dir < 0) { const c = $("#dishes"); c.scrollLeft = c.scrollWidth; } // coming back: land on the last dish
+  return true;
+}
 function step(dir) {
   const c = $("#dishes"), card = $(".card", c);
-  if (card) c.scrollBy({ left: dir * (card.offsetWidth + 16), behavior: "smooth" });
+  if (!card) return;
+  if (atEdge(c, dir) && stepCat(dir)) return;
+  c.scrollBy({ left: dir * (card.offsetWidth + 16), behavior: "smooth" });
 }
+/* Pull to the neighbouring category: when the dishes of a category run out and the finger keeps pulling,
+   a tab with a stretching arrow and the next category's name grows out of the screen edge.
+   Pull it far enough (it turns solid) and let go to switch; let go earlier and it tucks back in. */
+(() => {
+  const c = $("#dishes"), host = c.parentNode, ARM = 84, MAX = 128;
+  const chev = (d) => `<svg viewBox="0 0 24 24"><path d="${d > 0 ? "M9 5l7 7-7 7" : "M15 5l-7 7 7 7"}"/></svg>`;
+  const pulls = {};
+  [1, -1].forEach((d) => {
+    const el = document.createElement("div");
+    el.className = "pull " + (d > 0 ? "pull-next" : "pull-prev");
+    el.setAttribute("aria-hidden", "true");
+    el.innerHTML = `<span class="pull-arrow"><i></i>${chev(d)}</span><b></b>`;
+    host.appendChild(el);
+    pulls[d] = el;
+  });
+  let x0 = 0, y0 = 0, edgeX = null, dir = 0, pull = 0, live = false;
+  const hide = () => {
+    [1, -1].forEach((d) => { pulls[d].classList.remove("is-pulling", "armed"); pulls[d].style.setProperty("--p", 0); });
+    pull = 0; edgeX = null;
+  };
+  c.addEventListener("touchstart", (e) => {
+    live = e.touches.length === 1 && c.classList.contains("carousel");
+    if (!live) return;
+    x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; edgeX = null; pull = 0; dir = 0;
+  }, { passive: true });
+  c.addEventListener("touchmove", (e) => {
+    if (!live) return;
+    const x = e.touches[0].clientX, y = e.touches[0].clientY;
+    if (dir === 0) {
+      if (Math.abs(x - x0) < 8) return;
+      if (Math.abs(y - y0) > Math.abs(x - x0)) { live = false; return; } // a vertical page scroll
+      dir = x < x0 ? 1 : -1;
+    }
+    const keys = Object.keys(MENU), next = keys[keys.indexOf(cur) + dir];
+    if (!next || !atEdge(c, dir)) { if (pull) hide(); edgeX = null; return; }
+    if (edgeX === null) edgeX = x; // the pull starts counting where the carousel ran out
+    pull = Math.max(0, (edgeX - x) * dir);
+    const el = pulls[dir];
+    $("b", el).textContent = next;
+    el.style.top = c.offsetTop + c.offsetHeight / 2 + "px";
+    el.style.setProperty("--p", Math.min(1, pull / MAX).toFixed(3));
+    el.classList.add("is-pulling");
+    el.classList.toggle("armed", pull >= ARM);
+  }, { passive: true });
+  const end = (e) => {
+    if (!live) return;
+    live = false;
+    const go = e.type === "touchend" && pull >= ARM, d = dir;
+    hide();
+    if (go) stepCat(d);
+  };
+  c.addEventListener("touchend", end, { passive: true });
+  c.addEventListener("touchcancel", end, { passive: true });
+})();
 $("#prev").addEventListener("click", () => step(-1));
 $("#next").addEventListener("click", () => step(1));
 $$("[data-view]").forEach((b) =>
