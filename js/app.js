@@ -173,8 +173,8 @@ function sizes(d) {
 const SHELF_CATS = ["Бранчи", "Боулы", "Супы", "Пасты", "Кофе"].filter((k) => MENU[k]);
 let shelfCat = SHELF_CATS[0], shelfIdx = 0, shelfTimer = 0, shelfPaused = false;
 const shelf = $("#shelf");
-$("#heroCats").innerHTML = SHELF_CATS
-  .map((k) => `<button type="button" data-cat="${k}" aria-pressed="${k === shelfCat}">${k}</button>`).join("");
+$("#heroCats").innerHTML = `<div class="seg-in">${SHELF_CATS
+  .map((k) => `<button type="button" data-cat="${k}" aria-pressed="${k === shelfCat}">${k}</button>`).join("")}</div>`;
 function renderShelf(animate = false) {
   const items = MENU[shelfCat].filter((d) => photoOf(d)).slice(0, 6);
   shelf.innerHTML = items
@@ -188,6 +188,12 @@ function renderShelf(animate = false) {
       </div>
     </article>`)
     .join("");
+  // the plate's shadow disc appears only when its photo is there
+  $$(".pcard-pic", shelf).forEach((im) => {
+    const on = () => im.parentNode.classList.add("has-pic");
+    if (im.tagName !== "IMG" || im.complete) on();
+    else im.addEventListener("load", on, { once: true });
+  });
   $("#shelfDots").innerHTML = items.map((_, i) => `<i class="${i ? "" : "on"}"></i>`).join("");
   shelf.scrollLeft = 0;
   shelfIdx = 0;
