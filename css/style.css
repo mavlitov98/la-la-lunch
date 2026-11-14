@@ -332,8 +332,12 @@ body::before {
   padding: 0 22px 22px; border-radius: 32px;
   background: linear-gradient(165deg, var(--card-1), var(--card-2)); color: var(--on-card);
   box-shadow: 0 24px 40px -18px var(--shadow);
-  transform: scale(calc(.9 + .1 * var(--t)));
+  transform: translateZ(0) scale(calc(.9 + .1 * var(--t)));
   transform-origin: 50% 100%;
+  /* one GPU layer per card: Safari otherwise re-rasterises the scaled card in tiles while it scrolls
+     and a hairline of the page shows through between two tiles at some positions */
+  will-change: transform, opacity;
+  -webkit-backface-visibility: hidden; backface-visibility: hidden;
   opacity: calc(.55 + .45 * var(--t));
 }
 .plate {
