@@ -218,7 +218,15 @@ body::before {
 }
 .pcard-pic {
   display: block; width: var(--plate); height: var(--plate); max-width: none; margin: calc(var(--plate) * -.38) auto 0; object-fit: contain;
-  filter: drop-shadow(0 14px 14px rgba(21, 48, 43, .22)); pointer-events: none; -webkit-user-drag: none;
+  position: relative; pointer-events: none; -webkit-user-drag: none;
+}
+/* the plate's shadow is a soft gradient disc, not a CSS filter: Safari draws a pale box behind filtered images */
+.pcard { position: relative; }
+.pcard::before {
+  content: ""; position: absolute; left: 50%; top: calc(var(--plate) * -.38 + 12px);
+  width: calc(var(--plate) * 1.12); height: calc(var(--plate) * 1.12); margin-left: calc(var(--plate) * -.56);
+  border-radius: 50%; pointer-events: none;
+  background: radial-gradient(closest-side, rgba(21, 48, 43, .34) 72%, rgba(21, 48, 43, .12) 88%, transparent 100%);
 }
 /* category switch: cards rise in one after another, the plate spins into place */
 .pcard.is-entering { animation: pcard-in .5s var(--ease) backwards; animation-delay: calc(var(--i, 0) * 70ms); }
@@ -253,8 +261,18 @@ body::before {
   .hero { padding-top: max(calc(var(--sat) + 10px), 3.6vh); }
   .hero .logo-xl { font-size: 38px; }
   .hero-q { margin-top: 10px; font-size: 26px; }
-  .hero-addr { display: none; }
   .hero-foot { padding-top: 10px; }
+}
+@media (max-width: 859px) and (max-height: 675px) {
+  .hero-addr { display: none; }
+}
+/* Safari shows the page under its floating bottom toolbar: stretch the mint down to the real bottom edge
+   (large viewport) while the content still ends where the small viewport does */
+@supports (height: 100lvh) {
+  @media (max-width: 859px) {
+    .hero { min-height: 100lvh; padding-bottom: calc(22px + var(--sab) + 100lvh - 100svh); }
+    .has-cart .hero { padding-bottom: calc(100px + var(--sab) + 100lvh - 100svh); }
+  }
 }
 
 /* ---------- menu ---------- */
