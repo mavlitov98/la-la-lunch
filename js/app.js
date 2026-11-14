@@ -246,7 +246,6 @@ function showHours() {
   const h = +new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Moscow", hour: "2-digit", hour12: false }).format(new Date()) % 24;
   const open = h >= OPEN_H && h < CLOSE_H;
   $("#heroHours").textContent = open ? "Открыто до 21:00" : "Откроемся в 9:00";
-  $("#liveDot").classList.toggle("closed", !open);
 }
 showHours();
 setInterval(showHours, 60000);
