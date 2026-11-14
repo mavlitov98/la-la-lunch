@@ -495,6 +495,7 @@ const total = () =>
 function renderCart() {
   const n = count(), sum = total(), keys = Object.keys(cart);
   $("#dockBadge").dataset.open = String(n > 0);
+  document.body.classList.toggle("has-cart", n > 0);
   if (n) popText($("#dockCount"), String(n));
   $$("[data-cart-label]").forEach((e) => popText(e, n ? fmt(sum) : "Корзина"));
   if ($("#sum").textContent !== fmt(sum)) popText($("#sum"), fmt(sum));
@@ -687,7 +688,9 @@ new IntersectionObserver(([en]) => document.body.classList.toggle("scrolled", !e
 const io = new IntersectionObserver(
   (es) =>
     es.forEach((en) => {
-      if (en.isIntersecting) $$(".dock [data-sec]").forEach((a) => a.classList.toggle("on", a.dataset.sec === en.target.id));
+      if (!en.isIntersecting) return;
+      $$(".dock [data-sec]").forEach((a) => a.classList.toggle("on", a.dataset.sec === en.target.id));
+      document.body.dataset.sec = en.target.id; // phones: the dock is hidden on the hero while the cart is empty
     }),
   { rootMargin: "-45% 0px -50% 0px" }
 );

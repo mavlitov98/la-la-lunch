@@ -169,7 +169,8 @@ body::before {
   background: var(--hero-bg);
   /* 62px on a 852px-tall screen; never under the status bar */
   padding-top: max(calc(var(--sat) + 12px), clamp(20px, 7.28vh, 62px));
-  padding-bottom: calc(100px + var(--sab)); /* the dock */
+  padding-bottom: calc(22px + var(--sab));
+  transition: padding-bottom .35s var(--ease);
 }
 .hero { --plate: clamp(128px, 22.3vh, 190px); --plate: clamp(128px, 22.3svh, 190px); } /* 190px on a 852px screen */
 .hero-in { flex: 1; width: 100%; min-width: 0; display: flex; flex-direction: column; align-items: center; }
@@ -481,6 +482,11 @@ a.map { position: relative; display: block; text-decoration: none; color: var(--
   background: var(--surface);
   box-shadow: 0 10px 28px rgba(21, 48, 43, .16), 0 0 0 1px rgba(21, 48, 43, .05);
 }
+/* the first screen has its own "all menu" button, so the dock stays out of the way there
+   until something is in the cart (then it comes back with the total, and the hero makes room) */
+.dock { transition: transform .35s var(--ease), opacity .25s; }
+body[data-sec="home"]:not(.has-cart) .dock { transform: translateY(calc(100% + 40px)); opacity: 0; pointer-events: none; }
+@media (max-width: 859px) { .has-cart .hero { padding-bottom: calc(100px + var(--sab)); } }
 .dock a, .dock button {
   position: relative; min-width: 0; border: 0; border-radius: 27px;
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
