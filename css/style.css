@@ -172,7 +172,8 @@ body::before {
   padding-bottom: calc(22px + var(--sab));
   transition: padding-bottom .35s var(--ease);
 }
-.hero { --plate: clamp(128px, 22.3vh, 190px); --plate: clamp(128px, 22.3svh, 190px); } /* 190px on a 852px screen */
+/* plate and card grow with the screen height: 213px plate / 252px card on a 852px screen, 174 / 206 at 695px */
+.hero { --plate: clamp(128px, 25vh, 220px); --plate: clamp(128px, 25svh, 220px); --cardw: calc(var(--plate) * 1.184); }
 .hero-in { flex: 1; width: 100%; min-width: 0; display: flex; flex-direction: column; align-items: center; }
 .signboard { flex: none; display: flex; justify-content: center; }
 .hero .logo { align-items: center; }
@@ -206,11 +207,11 @@ body::before {
   scroll-snap-type: x mandatory;
   /* top room for the plates that stick out above the cards; bottom room (40px, 26 of it given back by the
      negative margin) so the card shadow fades out fully instead of being cut off by the scroll box */
-  padding: calc(var(--plate) * .38 + 20px) calc(50% - 112.5px) 40px;
+  padding: calc(var(--plate) * .38 + 20px) calc(50% - var(--cardw) / 2) 40px;
 }
 .shelf::-webkit-scrollbar { display: none; }
 .pcard {
-  flex: none; width: 225px; scroll-snap-align: center; cursor: pointer;
+  flex: none; width: var(--cardw); scroll-snap-align: center; cursor: pointer;
   display: flex; flex-direction: column; padding: 0 16px 14px;
   border-radius: 30px; background: var(--surface); box-shadow: 0 12px 24px rgba(21, 48, 43, .14);
   -webkit-user-select: none; user-select: none;
